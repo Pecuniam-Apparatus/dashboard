@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gambit Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <span class="brand">GAMBIT</span>
+      <span class="pair">BTC/USD</span>
+      <span id="ws-status" class="ws-status connecting">● CONNECTING</span>
+    </header>
+
+    <div id="main-grid">
+      <section id="chart-panel">
+        <div id="timeframe-bar">
+          <button class="tf active" data-interval="1">1m</button>
+          <button class="tf" data-interval="5">5m</button>
+          <button class="tf" data-interval="15">15m</button>
+          <button class="tf" data-interval="60">1h</button>
+          <button class="tf" data-interval="240">4h</button>
+          <button class="tf" data-interval="1440">1D</button>
+        </div>
+        <div id="chart"></div>
+      </section>
+
+      <aside id="sidebar">
+        <div id="ticker-panel">
+          <div class="panel-label">TICKER</div>
+          <div id="last-price">—</div>
+          <div id="ticker-stats">
+            <span class="stat">
+              <span class="stat-label">CHG</span>
+              <span id="ticker-change">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">HIGH</span>
+              <span id="ticker-high">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">LOW</span>
+              <span id="ticker-low">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">VOL</span>
+              <span id="ticker-volume">—</span>
+            </span>
+          </div>
+        </div>
+
+        <div id="orderbook-panel">
+          <div class="panel-label">ORDER BOOK</div>
+          <div id="orderbook">
+            <div id="ob-header">
+              <span>QTY</span>
+              <span>PRICE</span>
+            </div>
+            <div id="asks-container"></div>
+            <div id="spread-bar"><span id="spread-value">—</span></div>
+            <div id="bids-container"></div>
+          </div>
+        </div>
+
+        <div id="trades-panel">
+          <div class="panel-label">RECENT TRADES</div>
+          <div id="trades-header">
+            <span>TIME</span>
+            <span>PRICE</span>
+            <span>QTY</span>
+          </div>
+          <div id="trades-list"></div>
+        </div>
+      </aside>
+    </div>
+
+    <section id="strategies-panel">
+      <div class="panel-label">STRATEGIES</div>
+      <div id="strategies-table-wrap">
+        <table id="strategies-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Pair</th>
+              <th>PnL</th>
+              <th>Last Trade</th>
+            </tr>
+          </thead>
+          <tbody id="strategies-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="ws.js"></script>
+  <script src="ticker.js"></script>
+  <script src="orderbook.js"></script>
+  <script src="trades.js"></script>
+  <script src="chart.js"></script>
+  <script src="strategies.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
