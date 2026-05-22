@@ -28,6 +28,8 @@ const ChartPanel = (() => {
         borderColor: '#2a2a2a',
         timeVisible: true,
         secondsVisible: false,
+        barSpacing: 8,
+        minBarSpacing: 4,
       },
     });
 
@@ -73,7 +75,7 @@ const ChartPanel = (() => {
         close: parseFloat(close),
       }));
       series.setData(candles);
-      chart.timeScale().fitContent();
+      chart.timeScale().scrollToRealTime();
     } catch (e) {
       console.error('Failed to load chart history:', e);
     }
