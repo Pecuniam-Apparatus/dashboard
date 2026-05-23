@@ -1,7 +1,7 @@
-const OrderBook = (() => {
-  const asksEl  = document.getElementById('asks-container');
-  const bidsEl  = document.getElementById('bids-container');
-  const spreadEl = document.getElementById('spread-value');
+function createOrderBook(root) {
+  const asksEl  = root.querySelector('.asks-container');
+  const bidsEl  = root.querySelector('.bids-container');
+  const spreadEl = root.querySelector('.spread-value');
   const DEPTH = 15;
 
   const bids = new Map();
@@ -74,4 +74,4 @@ const OrderBook = (() => {
   }
 
   return { handle };
-})();
+}

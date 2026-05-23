@@ -1,6 +1,5 @@
-const ChartPanel = (() => {
-  const container = document.getElementById('chart');
-  const buttons   = document.querySelectorAll('.tf');
+function createChartPanel(root, cfg) {
+  const container = root.querySelector('.chart');
 
   let currentInterval = 1;
   let chart = null;
@@ -49,17 +48,13 @@ const ChartPanel = (() => {
       });
     }).observe(container);
 
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => switchInterval(Number(btn.dataset.interval)));
-    });
-
     loadHistory(currentInterval);
   }
 
   async function loadHistory(interval) {
     try {
       const resp = await fetch(
-        `https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=${interval}`
+        `https://api.kraken.com/0/public/OHLC?pair=${cfg.pair}&interval=${interval}`
       );
       const json = await resp.json();
       if (json.error && json.error.length) {
@@ -83,12 +78,9 @@ const ChartPanel = (() => {
 
   function switchInterval(interval) {
     if (interval === currentInterval) return;
-    KrakenWS.unsubscribe({ channel: 'ohlc', symbol: ['BTC/USD'], interval: currentInterval });
     currentInterval = interval;
     series.setData([]);
     loadHistory(interval);
-    KrakenWS.subscribe({ channel: 'ohlc', symbol: ['BTC/USD'], interval });
-    buttons.forEach(b => b.classList.toggle('active', Number(b.dataset.interval) === interval));
   }
 
   function handleOHLC(msg) {
@@ -105,5 +97,5 @@ const ChartPanel = (() => {
     });
   }
 
-  return { init, handleOHLC };
-})();
+  return { init, handleOHLC, switchInterval };
+}

@@ -1,5 +1,5 @@
-const TradesFeed = (() => {
-  const listEl = document.getElementById('trades-list');
+function createTradesFeed(root) {
+  const listEl = root.querySelector('.trades-list');
   const MAX = 60;
   const trades = [];
 
@@ -37,4 +37,4 @@ const TradesFeed = (() => {
   }
 
   return { handle };
-})();
+}
