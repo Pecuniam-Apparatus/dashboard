@@ -1,9 +1,9 @@
-const Ticker = (() => {
-  const lastPriceEl = document.getElementById('last-price');
-  const changeEl    = document.getElementById('ticker-change');
-  const highEl      = document.getElementById('ticker-high');
-  const lowEl       = document.getElementById('ticker-low');
-  const volumeEl    = document.getElementById('ticker-volume');
+function createTicker(root) {
+  const lastPriceEl = root.querySelector('.last-price');
+  const changeEl    = root.querySelector('.ticker-change');
+  const highEl      = root.querySelector('.ticker-high');
+  const lowEl       = root.querySelector('.ticker-low');
+  const volumeEl    = root.querySelector('.ticker-volume');
 
   let prevPrice = null;
   let flashTimer = null;
@@ -42,4 +42,4 @@ const Ticker = (() => {
   }
 
   return { update };
-})();
+}
