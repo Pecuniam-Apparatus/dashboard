@@ -82,6 +82,7 @@ body {
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--border);
+  border-left: 4px solid var(--accent, var(--orange));
 }
 
 .symbol-row.no-chart {
@@ -94,9 +95,8 @@ body {
   color: var(--accent, var(--orange));
   letter-spacing: 0.12em;
   padding: 4px 12px;
-  background: color-mix(in srgb, var(--accent, transparent) 12%, #0d0d0d);
+  background: color-mix(in srgb, var(--accent, transparent) 14%, #0d0d0d);
   border-bottom: 1px solid var(--border);
-  border-left: 3px solid var(--accent, var(--orange));
   flex-shrink: 0;
 }
 
@@ -159,7 +159,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: color-mix(in srgb, var(--accent, transparent) 7%, var(--panel));
+  background: color-mix(in srgb, var(--accent, transparent) 13%, var(--panel));
 }
 
 /* ---- CHART-LESS ROW (ETH/SOL): panels side-by-side, full width ---- */
