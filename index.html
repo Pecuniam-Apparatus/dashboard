@@ -21,6 +21,24 @@
       <span id="ws-status" class="ws-status connecting">● CONNECTING</span>
     </header>
 
+    <section id="strategies-panel">
+      <div class="panel-label">STRATEGIES</div>
+      <div id="strategies-table-wrap">
+        <table id="strategies-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Pair</th>
+              <th>PnL</th>
+              <th>Last Trade</th>
+            </tr>
+          </thead>
+          <tbody id="strategies-body"></tbody>
+        </table>
+      </div>
+    </section>
+
     <div id="rows"></div>
 
     <template id="symbol-row">
@@ -81,24 +99,6 @@
         </div>
       </section>
     </template>
-
-    <section id="strategies-panel">
-      <div class="panel-label">STRATEGIES</div>
-      <div id="strategies-table-wrap">
-        <table id="strategies-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Pair</th>
-              <th>PnL</th>
-              <th>Last Trade</th>
-            </tr>
-          </thead>
-          <tbody id="strategies-body"></tbody>
-        </table>
-      </div>
-    </section>
   </div>
 
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
