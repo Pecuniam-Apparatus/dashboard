@@ -82,7 +82,7 @@ body {
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--border);
-  border-left: 4px solid var(--accent, var(--orange));
+  border-left: 4px solid var(--accent, var(--border));
 }
 
 .symbol-row.no-chart {
