@@ -1,8 +1,8 @@
 (function () {
   const SYMBOLS = [
-    { ws: 'BTC/USD', pair: 'XBTUSD', label: 'BTC/USD', chart: true },
-    { ws: 'ETH/USD', pair: 'ETHUSD', label: 'ETH/USD' },
-    { ws: 'SOL/USD', pair: 'SOLUSD', label: 'SOL/USD' },
+    { ws: 'BTC/USD', pair: 'XBTUSD', label: 'BTC/USD', chart: true, color: '#f7931a' },
+    { ws: 'ETH/USD', pair: 'ETHUSD', label: 'ETH/USD', color: '#627eea' },
+    { ws: 'SOL/USD', pair: 'SOLUSD', label: 'SOL/USD', color: '#9945ff' },
   ];
 
   const statusEl = document.getElementById('ws-status');
@@ -14,6 +14,7 @@
   SYMBOLS.forEach(cfg => {
     const node = template.content.firstElementChild.cloneNode(true);
     node.querySelector('.row-label').textContent = cfg.label;
+    node.style.setProperty('--accent', cfg.color);
 
     if (!cfg.chart) {
       node.classList.add('no-chart');
