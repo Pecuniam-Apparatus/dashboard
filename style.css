@@ -77,11 +77,15 @@ body {
 }
 
 .symbol-row {
-  flex: 1;
+  flex: 2;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--border);
+}
+
+.symbol-row.no-chart {
+  flex: 1;
 }
 
 .row-label {
@@ -155,6 +159,26 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: var(--panel);
+}
+
+/* ---- CHART-LESS ROW (ETH/SOL): panels side-by-side, full width ---- */
+
+.symbol-row.no-chart .sidebar {
+  width: 100%;
+  flex-direction: row;
+}
+
+.symbol-row.no-chart .ticker-panel,
+.symbol-row.no-chart .orderbook-panel,
+.symbol-row.no-chart .trades-panel {
+  flex: 1 1 0;
+  min-width: 0;
+  border-bottom: none;
+}
+
+.symbol-row.no-chart .ticker-panel,
+.symbol-row.no-chart .orderbook-panel {
+  border-right: 1px solid var(--border);
 }
 
 .panel-label {
@@ -321,7 +345,7 @@ body {
 #strategies-panel {
   flex-shrink: 0;
   background: var(--panel);
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 #strategies-table-wrap {
@@ -429,6 +453,25 @@ body {
   .trades-panel {
     flex: none;
     height: 200px;
+  }
+
+  .symbol-row.no-chart .sidebar {
+    flex-direction: column;
+  }
+
+  .symbol-row.no-chart .ticker-panel,
+  .symbol-row.no-chart .orderbook-panel {
+    border-right: none;
+  }
+
+  .symbol-row.no-chart .orderbook-panel {
+    height: 280px;
+    flex: none;
+  }
+
+  .symbol-row.no-chart .trades-panel {
+    height: 200px;
+    flex: none;
   }
 
   #strategies-panel {
