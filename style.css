@@ -91,11 +91,12 @@ body {
 .row-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--orange);
+  color: var(--accent, var(--orange));
   letter-spacing: 0.12em;
   padding: 4px 12px;
-  background: #0d0d0d;
+  background: color-mix(in srgb, var(--accent, transparent) 12%, #0d0d0d);
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent, var(--orange));
   flex-shrink: 0;
 }
 
@@ -158,7 +159,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--panel);
+  background: color-mix(in srgb, var(--accent, transparent) 7%, var(--panel));
 }
 
 /* ---- CHART-LESS ROW (ETH/SOL): panels side-by-side, full width ---- */
@@ -184,11 +185,11 @@ body {
 .panel-label {
   font-size: 10px;
   font-weight: 600;
-  color: var(--orange);
+  color: var(--accent, var(--orange));
   letter-spacing: 0.14em;
   padding: 7px 12px 5px;
   border-bottom: 1px solid var(--border);
-  background: #0d0d0d;
+  background: color-mix(in srgb, var(--accent, transparent) 9%, #0d0d0d);
 }
 
 /* ---- TICKER ---- */
