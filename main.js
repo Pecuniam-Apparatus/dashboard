@@ -61,6 +61,10 @@
   KrakenWS.subscribe({ channel: 'trade',  symbol: wsSymbols });
   KrakenWS.subscribe({ channel: 'ohlc',   symbol: chartSymbols, interval: 1 });
 
+  PaperWS.onStatus(status => { if (status !== 'LIVE') Strategies.setOffline(); });
+  PaperWS.onMessage(hb => Strategies.applyHeartbeat(hb));
+  PaperWS.connect();
+
   let currentInterval = 1;
   const tfButtons = document.querySelectorAll('#timeframe-bar .tf');
   tfButtons.forEach(btn => {
