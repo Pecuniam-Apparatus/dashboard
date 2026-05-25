@@ -490,17 +490,41 @@ body {
   }
 
   /* Density tweaks so the band stays short */
+  .panel-label {
+    font-size: 9px;
+    padding: 4px 10px 3px;
+  }
+
   .last-price {
-    font-size: 18px;
-    padding: 4px 10px 2px;
+    font-size: 15px;
+    padding: 3px 10px 1px;
   }
 
   .ticker-stats {
-    gap: 4px 0;
-    padding: 2px 10px 6px;
+    gap: 3px 0;
+    padding: 1px 10px 5px;
   }
 
-  .panel-label {
-    padding: 4px 10px 3px;
+  .stat {
+    font-size: 10px;
+  }
+
+  .stat-label {
+    font-size: 8px;
+  }
+
+  .ob-header {
+    font-size: 8px;
+    padding: 3px 10px;
+  }
+
+  .ob-row {
+    font-size: 9px;
+    padding: 0 10px;
+  }
+
+  .spread-bar {
+    font-size: 9px;
+    padding: 1px 0;
   }
 }
