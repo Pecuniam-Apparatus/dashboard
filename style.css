@@ -403,83 +403,104 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
 
-/* ---- MOBILE (≤ 768px) ---- */
+/* ---- MOBILE (≤ 768px): condense all 3 pairs into one no-scroll screen ---- */
 
 @media (max-width: 768px) {
   body {
-    height: auto;
-    overflow: auto;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
   }
 
   #app {
-    height: auto;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
   }
 
-  #rows {
-    overflow: visible;
-    display: block;
+  /* Keep strategies bounded so it can't crowd out the pairs */
+  #strategies-table-wrap {
+    max-height: 92px;
   }
 
+  /* Pairs fill the remaining viewport, split proportionally (BTC dominant) */
   .symbol-row {
-    flex: none;
-    height: auto;
+    flex: 5;
+  }
+
+  .symbol-row.no-chart {
+    flex: 2;
+  }
+
+  .row-label {
+    padding: 2px 10px;
+  }
+
+  /* Chart on top, compact sidebar band below */
+  .symbol-grid {
+    flex-direction: column;
+  }
+
+  /* Chart fills BTC's space above its sidebar band */
+  .chart-panel {
+    flex: 1;
+    min-height: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Sidebar = compact horizontal band for every pair */
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  /* BTC: pin the band under the chart at a fixed short height */
+  .symbol-row:not(.no-chart) .sidebar {
+    height: 110px;
+    flex-shrink: 0;
+  }
+
+  /* ETH/SOL: band fills the whole (chart-less) row */
+  .symbol-row.no-chart .sidebar {
+    flex: 1;
     min-height: 0;
   }
 
-  .symbol-grid {
-    flex-direction: column;
-    overflow: visible;
-    flex: none;
-  }
-
-  .chart-panel {
-    height: 360px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    flex: none;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    flex: none;
-  }
-
+  /* Two readable columns side by side: ticker | order book */
+  .ticker-panel,
   .orderbook-panel {
-    height: 280px;
-    flex: none;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    border-bottom: none;
+    overflow: hidden;
   }
 
-  .trades-panel {
-    flex: none;
-    height: 200px;
+  .ticker-panel {
+    border-right: 1px solid var(--border);
   }
 
-  .symbol-row.no-chart .sidebar {
-    flex-direction: column;
-  }
-
-  .symbol-row.no-chart .ticker-panel,
   .symbol-row.no-chart .orderbook-panel {
     border-right: none;
   }
 
-  .symbol-row.no-chart .orderbook-panel {
-    height: 280px;
-    flex: none;
+  /* Trades feed dropped on mobile to keep the band uncramped */
+  .trades-panel {
+    display: none;
   }
 
-  .symbol-row.no-chart .trades-panel {
-    height: 200px;
-    flex: none;
+  /* Density tweaks so the band stays short */
+  .last-price {
+    font-size: 18px;
+    padding: 4px 10px 2px;
   }
 
-  #strategies-panel {
-    overflow: visible;
+  .ticker-stats {
+    gap: 4px 0;
+    padding: 2px 10px 6px;
   }
 
-  #strategies-table-wrap {
-    max-height: none;
+  .panel-label {
+    padding: 4px 10px 3px;
   }
 }
