@@ -3,9 +3,20 @@ const Strategies = (() => {
   const statusEl = document.getElementById('strategies-status');
   const STALE_MS = 10000;
 
+  // Sharpe is computed client-side from the equity stream. The engine ticks at
+  // ~250 ms which is noisier than the signal we care about, so we downsample
+  // to one equity sample per SHARPE_SAMPLE_MS and keep a trailing ring buffer.
+  // Annualization assumes continuous 24/7 markets (crypto); change the seconds
+  // constant if a strategy ever runs on a session-bound venue.
+  const SHARPE_SAMPLE_MS = 1000;
+  const SHARPE_WINDOW = 300;            // 5 min of 1 s samples
+  const SHARPE_MIN_SAMPLES = 30;        // 30 s of samples before showing a value
+  const SECONDS_PER_YEAR = 365.25 * 24 * 3600;
+  const SHARPE_ANNUALIZATION = Math.sqrt(SECONDS_PER_YEAR / (SHARPE_SAMPLE_MS / 1000));
+
   // Row state keyed by `${strategy_name}|${symbol}`. Tracks the previous
   // last_price per key so we can flash the cell on change (same pattern as
-  // ticker.js for the chart ticker).
+  // ticker.js for the chart ticker), plus a trailing equity buffer for Sharpe.
   const rows = new Map();
   // Injected by main.js so the strategy-name dot matches the chart overlay
   // color. Fallback returns muted so the dot is always visible.
@@ -33,10 +44,47 @@ const Strategies = (() => {
     return inPos && v ? Fmt.num(v) : '—';
   }
 
-  function renderRow(snap, prev) {
+  function pushEquitySample(buf, ts, equity) {
+    const e = parseFloat(equity);
+    if (!Number.isFinite(e) || e <= 0) return;
+    const last = buf.length ? buf[buf.length - 1] : null;
+    if (last && ts - last.ts < SHARPE_SAMPLE_MS) return;
+    buf.push({ ts, equity: e });
+    if (buf.length > SHARPE_WINDOW) buf.shift();
+  }
+
+  function sharpeFromBuf(buf) {
+    if (buf.length < SHARPE_MIN_SAMPLES) return null;
+    let sum = 0;
+    const n = buf.length - 1;
+    const rets = new Array(n);
+    for (let i = 1; i < buf.length; i++) {
+      const r = buf[i].equity / buf[i - 1].equity - 1;
+      rets[i - 1] = r;
+      sum += r;
+    }
+    const mean = sum / n;
+    let sq = 0;
+    for (let i = 0; i < n; i++) {
+      const d = rets[i] - mean;
+      sq += d * d;
+    }
+    const std = Math.sqrt(sq / n);
+    if (std === 0) return null;
+    return (mean / std) * SHARPE_ANNUALIZATION;
+  }
+
+  function sharpeCell(s) {
+    if (s == null || !Number.isFinite(s)) return '—';
+    const cls = s >= 0 ? 'up' : 'down';
+    return `<span class="${cls}">${(s >= 0 ? '+' : '') + Fmt.num(s)}</span>`;
+  }
+
+  function renderRow(row) {
+    const { snap, prevPrice, sharpe } = row;
     const flashCls =
-      prev != null && snap.last_price !== prev
-        ? (snap.last_price > prev ? 'flash-up' : 'flash-down')
+      prevPrice != null && snap.last_price !== prevPrice
+        ? (snap.last_price > prevPrice ? 'flash-up' : 'flash-down')
         : '';
     const dotColor = colorFn(snap.strategy_name);
     return `<tr data-key="${keyOf(snap)}">
@@ -50,6 +98,7 @@ const Strategies = (() => {
       <td class="last-cell ${flashCls}">${Fmt.num(snap.last_price)}</td>
       <td>${pnlCell(snap.unrealized_pnl)}</td>
       <td>${Fmt.num(snap.equity)}</td>
+      <td>${sharpeCell(sharpe)}</td>
       <td>${snap.trade_count}</td>
     </tr>`;
   }
@@ -59,7 +108,7 @@ const Strategies = (() => {
     const ordered = Array.from(rows.values()).sort((a, b) =>
       keyOf(a.snap).localeCompare(keyOf(b.snap))
     );
-    tbody.innerHTML = ordered.map(r => renderRow(r.snap, r.prevPrice)).join('');
+    tbody.innerHTML = ordered.map(renderRow).join('');
   }
 
   function setStatus(status) {
@@ -79,9 +128,14 @@ const Strategies = (() => {
     arr.forEach(snap => {
       const k = keyOf(snap);
       const prev = rows.get(k);
+      const equityBuf = prev ? prev.equityBuf : [];
+      const ts = snap.ts_ms || Date.now();
+      pushEquitySample(equityBuf, ts, snap.equity);
       rows.set(k, {
         snap,
         prevPrice: prev ? prev.snap.last_price : null,
+        equityBuf,
+        sharpe: sharpeFromBuf(equityBuf),
       });
     });
     setStatus('Running');
