@@ -29,10 +29,17 @@
         <table id="strategies-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Pair</th>
+              <th>Strategy</th>
+              <th>Symbol</th>
+              <th>Side</th>
+              <th>Qty</th>
+              <th>Entry</th>
+              <th>TP</th>
+              <th>SL</th>
+              <th>Last</th>
               <th>PnL</th>
-              <th>Last Trade</th>
+              <th>Equity</th>
+              <th>Trades</th>
             </tr>
           </thead>
           <tbody id="strategies-body"></tbody>
@@ -45,7 +52,9 @@
     <template id="symbol-row">
       <section class="symbol-row">
         <div class="row-label">
-          <span class="row-label-text"></span>
+          <span class="row-label-text">
+            <span class="strategy-name"></span><span class="strategy-symbol"></span>
+          </span>
           <span class="ws-status connecting">CONNECTING</span>
         </div>
         <div class="ticker-panel">

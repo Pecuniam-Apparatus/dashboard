@@ -5,6 +5,34 @@ function createChartPanel(root, cfg) {
   let chart = null;
   let series = null;
 
+  // Overlay state is per-strategy so the chart can show multiple strategies'
+  // TP/SL/entry lines and fill markers at once, all color-coded by strategy.
+  // key: strategy_name -> { entryLine, tpLine, slLine, fills, color }
+  const overlays = new Map();
+  let lastMarkerSig = '';
+
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+  }
+
+  function colorForStrategy(name) {
+    // Deterministic hue from the strategy name; fixed S/L keep contrast
+    // consistent against the dark theme. Returned as hex because the
+    // LightweightCharts 4.2 price-line parser doesn't reliably accept
+    // hsl() strings (the candle and grid colors are all hex too).
+    let h = 0;
+    for (let i = 0; i < name.length; i++) {
+      h = (h * 31 + name.charCodeAt(i)) | 0;
+    }
+    const hue = ((h % 360) + 360) % 360;
+    return hslToHex(hue, 70, 62);
+  }
+
   function init() {
     chart = LightweightCharts.createChart(container, {
       width: container.clientWidth,
@@ -79,6 +107,9 @@ function createChartPanel(root, cfg) {
   function switchInterval(interval) {
     if (interval === currentInterval) return;
     currentInterval = interval;
+    // Lines must be nulled BEFORE setData([]) — stale refs can throw inside
+    // lightweight-charts when the underlying series points are dropped.
+    clearOverlays();
     series.setData([]);
     loadHistory(interval);
   }
@@ -97,5 +128,153 @@ function createChartPanel(root, cfg) {
     });
   }
 
-  return { init, handleOHLC, switchInterval };
+  // ---- Strategy overlays ----
+
+  function getOverlay(name) {
+    let o = overlays.get(name);
+    if (!o) {
+      o = {
+        entryLine: null, tpLine: null, slLine: null,
+        fills: [],
+        color: colorForStrategy(name),
+      };
+      overlays.set(name, o);
+    }
+    return o;
+  }
+
+  function ensureLine(handle, price, color, title, style) {
+    const opts = {
+      price,
+      color,
+      lineWidth: 2,
+      lineStyle: style,
+      axisLabelVisible: true,
+      title,
+    };
+    if (handle) {
+      handle.applyOptions(opts);
+      return handle;
+    }
+    return series.createPriceLine(opts);
+  }
+
+  function removeLine(handle) {
+    if (handle) series.removePriceLine(handle);
+    return null;
+  }
+
+  function applyStrategyState(snap) {
+    if (!series) return;
+    const o = getOverlay(snap.strategy_name);
+    // Short label keeps the axis tag readable when several strategies overlap.
+    const tag = snap.strategy_name.slice(0, 6);
+
+    // Trust the price fields directly: if the engine reports a non-zero
+    // price, draw it. This avoids any in_position / side mismatch confusion.
+    const entry = Number(snap.entry_price) || 0;
+    const tp = Number(snap.tp_price) || 0;
+    const sl = Number(snap.sl_price) || 0;
+
+    if (entry > 0) {
+      o.entryLine = ensureLine(o.entryLine, entry, o.color, `${tag} ENT`, LightweightCharts.LineStyle.Solid);
+    } else {
+      o.entryLine = removeLine(o.entryLine);
+    }
+    if (tp > 0) {
+      o.tpLine = ensureLine(o.tpLine, tp, o.color, `${tag} TP`, LightweightCharts.LineStyle.Dashed);
+    } else {
+      o.tpLine = removeLine(o.tpLine);
+    }
+    if (sl > 0) {
+      o.slLine = ensureLine(o.slLine, sl, o.color, `${tag} SL`, LightweightCharts.LineStyle.Dotted);
+    } else {
+      o.slLine = removeLine(o.slLine);
+    }
+
+    // One-shot diagnostic per strategy state transition: log what the engine
+    // actually sent so we can confirm whether the issue is engine-side (all
+    // zeros) or dashboard-side. Only logs when something changes.
+    const sig = `${snap.in_position}|${snap.side}|${entry}|${tp}|${sl}`;
+    if (o.lastSig !== sig) {
+      o.lastSig = sig;
+      // eslint-disable-next-line no-console
+      console.info('[strategy]', snap.strategy_name, {
+        in_position: snap.in_position, side: snap.side,
+        entry_price: snap.entry_price, tp_price: snap.tp_price, sl_price: snap.sl_price,
+      });
+    }
+  }
+
+  function markerFor(fill, color) {
+    const long = fill.side === 'long';
+    const time = Math.floor(fill.ts_ms / 1000);
+    if (fill.type === 'entry') {
+      return long
+        ? { time, position: 'belowBar', shape: 'arrowUp',   color, text: 'L' }
+        : { time, position: 'aboveBar', shape: 'arrowDown', color, text: 'S' };
+    }
+    if (fill.type === 'tp_exit') {
+      return {
+        time,
+        position: long ? 'aboveBar' : 'belowBar',
+        shape: 'circle', color, text: 'TP',
+      };
+    }
+    // sl_exit
+    return {
+      time,
+      position: long ? 'aboveBar' : 'belowBar',
+      shape: 'circle', color, text: 'SL',
+    };
+  }
+
+  function renderMarkers() {
+    if (!series) return;
+    const all = [];
+    overlays.forEach(o => {
+      o.fills.forEach(f => all.push(markerFor(f, o.color)));
+    });
+    all.sort((a, b) => a.time - b.time);
+    // Cheap signature so the redraw is skipped when nothing changed across
+    // ticks (the feed re-sends the full fill array every 250 ms).
+    const sig = all.length + ':' + (all.length ? all[all.length - 1].time : 0);
+    if (sig === lastMarkerSig) return;
+    lastMarkerSig = sig;
+    series.setMarkers(all);
+  }
+
+  function applyFills(strategyName, fills) {
+    if (!series || !fills) return;
+    const o = getOverlay(strategyName);
+    o.fills = fills;
+    renderMarkers();
+  }
+
+  function removeStrategy(strategyName) {
+    const o = overlays.get(strategyName);
+    if (!o) return;
+    o.entryLine = removeLine(o.entryLine);
+    o.tpLine    = removeLine(o.tpLine);
+    o.slLine    = removeLine(o.slLine);
+    overlays.delete(strategyName);
+    renderMarkers();
+  }
+
+  function clearOverlays() {
+    overlays.forEach(o => {
+      o.entryLine = removeLine(o.entryLine);
+      o.tpLine    = removeLine(o.tpLine);
+      o.slLine    = removeLine(o.slLine);
+    });
+    overlays.clear();
+    if (series) series.setMarkers([]);
+    lastMarkerSig = '';
+  }
+
+  return {
+    init, handleOHLC, switchInterval,
+    applyStrategyState, applyFills, removeStrategy, clearOverlays,
+    colorForStrategy,
+  };
 }

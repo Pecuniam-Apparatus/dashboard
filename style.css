@@ -92,12 +92,26 @@ body {
   justify-content: space-between;
   font-size: 11px;
   font-weight: 600;
-  color: var(--orange);
   letter-spacing: 0.12em;
   padding: 4px 12px;
   background: #0d0d0d;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.row-label .strategy-name {
+  color: var(--orange);
+}
+
+.row-label .strategy-symbol {
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+.symbol-row.stale {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+  transition: opacity 0.3s, filter 0.3s;
 }
 
 .symbol-grid {
@@ -387,6 +401,42 @@ body {
 
 .status-badge.beat { animation: hb-pulse 0.6s ease-out; }
 
+.side-badge {
+  display: inline-block;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+}
+
+.side-badge.long  { color: var(--green); }
+.side-badge.short { color: var(--red); }
+.side-badge.flat  { color: var(--muted); border-color: var(--border); }
+
+.strategy-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.strat-name-cell {
+  font-weight: 600;
+  color: var(--text);
+}
+
+#strategies-table td.last-cell {
+  font-variant-numeric: tabular-nums;
+  transition: color 0.25s;
+}
+
+#strategies-table td.last-cell.flash-up   { color: var(--green); }
+#strategies-table td.last-cell.flash-down { color: var(--red); }
+
 @keyframes hb-pulse {
   from { background: color-mix(in srgb, currentColor 35%, transparent); }
   to   { background: transparent; }
@@ -450,14 +500,29 @@ body {
     text-overflow: ellipsis;
   }
 
+  /* Hide Symbol, Qty, Entry, TP, SL, Equity on mobile — they don't fit and
+     Symbol is almost always BTC/USD anyway. Keep: Strategy, Side, Last, PnL,
+     Trades. Free width goes to Strategy so the name fits. */
   #strategies-table th:nth-child(2),
-  #strategies-table td:nth-child(2) { display: none; }   /* Pair (always BTC/USD) */
+  #strategies-table td:nth-child(2),  /* Symbol */
+  #strategies-table th:nth-child(4),
+  #strategies-table td:nth-child(4),  /* Qty    */
+  #strategies-table th:nth-child(5),
+  #strategies-table td:nth-child(5),  /* Entry  */
+  #strategies-table th:nth-child(6),
+  #strategies-table td:nth-child(6),  /* TP     */
+  #strategies-table th:nth-child(7),
+  #strategies-table td:nth-child(7),  /* SL     */
+  #strategies-table th:nth-child(10),
+  #strategies-table td:nth-child(10) { display: none; } /* Equity */
 
-  #strategies-table th:nth-child(1),
-  #strategies-table td:nth-child(1) { width: 30%; }   /* Name */
-  #strategies-table th:nth-child(3),
-  #strategies-table td:nth-child(3) { width: 22%; }   /* PnL */
-  /* Last Trade (4th) takes the remainder and ellipsizes */
+  /* Let the Strategy cell wrap to a second line instead of ellipsizing
+     "Doofus Rick" -> "Doo..." */
+  #strategies-table td.strat-name-cell {
+    white-space: normal;
+    line-height: 1.2;
+    word-break: break-word;
+  }
 
   .row-label {
     padding: 2px 10px;
