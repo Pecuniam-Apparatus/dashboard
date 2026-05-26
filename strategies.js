@@ -40,7 +40,7 @@ const Strategies = (() => {
         : '';
     const dotColor = colorFn(snap.strategy_name);
     return `<tr data-key="${keyOf(snap)}">
-      <td><span class="strategy-dot" style="background:${dotColor}"></span>${snap.strategy_name}</td>
+      <td class="strat-name-cell" title="${snap.strategy_name}"><span class="strategy-dot" style="background:${dotColor}"></span>${snap.strategy_name}</td>
       <td>${snap.symbol}</td>
       <td>${sideBadge(snap.side)}</td>
       <td>${snap.in_position ? Fmt.num(snap.position_qty, 4) : '—'}</td>
