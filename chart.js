@@ -1,7 +1,7 @@
 function createChartPanel(root, cfg) {
   const container = root.querySelector('.chart');
 
-  let currentInterval = 1;
+  let currentInterval = 60;
   let chart = null;
   let series = null;
 

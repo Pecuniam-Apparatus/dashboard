@@ -31,13 +31,13 @@
   KrakenWS.subscribe({ channel: 'ticker', symbol });
   KrakenWS.subscribe({ channel: 'book',   symbol, depth: 25 });
   KrakenWS.subscribe({ channel: 'trade',  symbol });
-  KrakenWS.subscribe({ channel: 'ohlc',   symbol, interval: 1 });
+  KrakenWS.subscribe({ channel: 'ohlc',   symbol, interval: 60 });
 
   PaperWS.onStatus(status => { if (status !== 'LIVE') Strategies.setOffline(); });
   PaperWS.onMessage(hb => Strategies.applyHeartbeat(hb));
   PaperWS.connect();
 
-  let currentInterval = 1;
+  let currentInterval = 60;
   const tfButtons = document.querySelectorAll('#timeframe-bar .tf');
   tfButtons.forEach(btn => {
     btn.addEventListener('click', () => {

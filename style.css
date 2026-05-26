@@ -167,17 +167,21 @@ body {
   background: #0d0d0d;
 }
 
-/* ---- TICKER ---- */
+/* ---- TICKER (strip above the chart) ---- */
 
 .ticker-panel {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding: 6px 14px;
   border-bottom: 1px solid var(--border);
+  background: var(--panel);
   flex-shrink: 0;
 }
 
 .last-price {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 600;
-  padding: 8px 12px 4px;
   letter-spacing: -0.01em;
   color: var(--text);
   transition: color 0.25s;
@@ -187,10 +191,8 @@ body {
 .last-price.down { color: var(--red); }
 
 .ticker-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 0;
-  padding: 4px 12px 10px;
+  display: flex;
+  gap: 24px;
 }
 
 .stat {
@@ -324,6 +326,12 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.strategies-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 #strategies-table-wrap {
   max-height: 200px;
   overflow-y: auto;
@@ -419,7 +427,7 @@ body {
     width: 100%;
   }
 
-  /* Strategies: fixed layout so all 5 columns fit; ellipsize Last Trade */
+  /* Strategies: drop the (always-BTC) Pair column, keep the values readable */
   #strategies-table-wrap {
     max-height: 110px;
   }
@@ -437,21 +445,41 @@ body {
     text-overflow: ellipsis;
   }
 
-  #strategies-table th:nth-child(1),
-  #strategies-table td:nth-child(1) { width: 22%; }   /* Name */
   #strategies-table th:nth-child(2),
-  #strategies-table td:nth-child(2) { width: 22%; }   /* Status */
+  #strategies-table td:nth-child(2) { display: none; }   /* Pair (always BTC/USD) */
+
+  #strategies-table th:nth-child(1),
+  #strategies-table td:nth-child(1) { width: 30%; }   /* Name */
   #strategies-table th:nth-child(3),
-  #strategies-table td:nth-child(3) { width: 16%; }   /* Pair */
-  #strategies-table th:nth-child(4),
-  #strategies-table td:nth-child(4) { width: 14%; }   /* PnL */
-  /* Last Trade (5th) takes the remainder and ellipsizes */
+  #strategies-table td:nth-child(3) { width: 22%; }   /* PnL */
+  /* Last Trade (4th) takes the remainder and ellipsizes */
 
   .row-label {
     padding: 2px 10px;
   }
 
-  /* Chart on top, panels stacked vertically below */
+  /* Ticker strip stays compact: price over a 4-up stat row */
+  .ticker-panel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 4px 10px 6px;
+  }
+
+  .last-price {
+    font-size: 20px;
+  }
+
+  .ticker-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px 8px;
+  }
+
+  .stat-label { font-size: 8px; }
+  .stat { font-size: 10px; }
+
+  /* BTC fills the viewport: chart on top, order book + trades below (no scroll) */
   .symbol-grid {
     flex-direction: column;
   }
@@ -467,5 +495,40 @@ body {
     width: 100%;
     flex: 1;
     min-height: 0;
+    flex-direction: row;
+  }
+
+  .orderbook-panel {
+    flex: 1;
+    min-height: 0;
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+  }
+
+  .trades-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .panel-label {
+    font-size: 9px;
+    padding: 4px 10px 3px;
+  }
+
+  .ob-header,
+  .trades-header {
+    font-size: 8px;
+    padding: 3px 10px;
+  }
+
+  .ob-row,
+  .trade-row {
+    font-size: 9px;
+    padding: 0 10px;
+  }
+
+  .spread-bar {
+    font-size: 9px;
+    padding: 1px 0;
   }
 }
