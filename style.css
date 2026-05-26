@@ -56,9 +56,11 @@ body {
 }
 
 .ws-status {
-  margin-left: auto;
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
 }
 
 .ws-status.live        { color: var(--green); }
@@ -85,6 +87,9 @@ body {
 }
 
 .row-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 11px;
   font-weight: 600;
   color: var(--orange);
