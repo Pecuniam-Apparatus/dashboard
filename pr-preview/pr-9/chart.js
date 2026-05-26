@@ -11,15 +11,26 @@ function createChartPanel(root, cfg) {
   const overlays = new Map();
   let lastMarkerSig = '';
 
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+  }
+
   function colorForStrategy(name) {
     // Deterministic hue from the strategy name; fixed S/L keep contrast
-    // consistent against the dark theme.
+    // consistent against the dark theme. Returned as hex because the
+    // LightweightCharts 4.2 price-line parser doesn't reliably accept
+    // hsl() strings (the candle and grid colors are all hex too).
     let h = 0;
     for (let i = 0; i < name.length; i++) {
       h = (h * 31 + name.charCodeAt(i)) | 0;
     }
     const hue = ((h % 360) + 360) % 360;
-    return `hsl(${hue}, 70%, 62%)`;
+    return hslToHex(hue, 70, 62);
   }
 
   function init() {
