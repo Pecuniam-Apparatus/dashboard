@@ -8,13 +8,6 @@ function createTicker(root) {
   let prevPrice = null;
   let flashTimer = null;
 
-  function fmt(n, dec = 2) {
-    return parseFloat(n).toLocaleString('en-US', {
-      minimumFractionDigits: dec,
-      maximumFractionDigits: dec,
-    });
-  }
-
   function update(data) {
     const price = parseFloat(data.last);
 
@@ -28,17 +21,17 @@ function createTicker(root) {
     }
     prevPrice = price;
 
-    lastPriceEl.textContent = fmt(price);
+    lastPriceEl.textContent = Fmt.num(price);
 
     const pct = parseFloat(data.change_pct);
-    changeEl.textContent = (pct >= 0 ? '+' : '') + fmt(pct) + '%';
+    changeEl.textContent = (pct >= 0 ? '+' : '') + Fmt.num(pct) + '%';
     changeEl.className = pct >= 0 ? 'up' : 'down';
 
-    highEl.textContent = fmt(data.high);
-    lowEl.textContent  = fmt(data.low);
+    highEl.textContent = Fmt.num(data.high);
+    lowEl.textContent  = Fmt.num(data.low);
 
     const vol = parseFloat(data.volume);
-    volumeEl.textContent = vol >= 1000 ? fmt(vol / 1000, 1) + 'K' : fmt(vol, 2);
+    volumeEl.textContent = vol >= 1000 ? Fmt.num(vol / 1000, 1) + 'K' : Fmt.num(vol, 2);
   }
 
   return { update };
