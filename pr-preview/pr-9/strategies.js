@@ -7,6 +7,9 @@ const Strategies = (() => {
   // last_price per key so we can flash the cell on change (same pattern as
   // ticker.js for the chart ticker).
   const rows = new Map();
+  // Injected by main.js so the strategy-name dot matches the chart overlay
+  // color. Fallback returns muted so the dot is always visible.
+  let colorFn = () => 'var(--muted)';
 
   let staleTimer = null;
 
@@ -35,8 +38,9 @@ const Strategies = (() => {
       prev != null && snap.last_price !== prev
         ? (snap.last_price > prev ? 'flash-up' : 'flash-down')
         : '';
+    const dotColor = colorFn(snap.strategy_name);
     return `<tr data-key="${keyOf(snap)}">
-      <td>${snap.strategy_name}</td>
+      <td><span class="strategy-dot" style="background:${dotColor}"></span>${snap.strategy_name}</td>
       <td>${snap.symbol}</td>
       <td>${sideBadge(snap.side)}</td>
       <td>${snap.in_position ? Fmt.num(snap.position_qty, 4) : '—'}</td>
@@ -98,8 +102,12 @@ const Strategies = (() => {
     setStatus('Offline');
   }
 
+  function setColorFn(fn) {
+    if (typeof fn === 'function') colorFn = fn;
+  }
+
   setStatus('Offline');
   render();
 
-  return { applyAll, setOffline, removeStrategy };
+  return { applyAll, setOffline, removeStrategy, setColorFn };
 })();
