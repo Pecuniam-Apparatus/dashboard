@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doomberg Terminal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <span class="brand">DOOMBERG TERMINAL</span>
+      <div id="timeframe-bar">
+        <button class="tf" data-interval="1">1m</button>
+        <button class="tf" data-interval="5">5m</button>
+        <button class="tf" data-interval="15">15m</button>
+        <button class="tf active" data-interval="60">1h</button>
+        <button class="tf" data-interval="240">4h</button>
+        <button class="tf" data-interval="1440">1D</button>
+      </div>
+      <span id="ws-status" class="ws-status connecting">● CONNECTING</span>
+    </header>
+
+    <section id="strategies-panel">
+      <div class="panel-label strategies-label">
+        <span>STRATEGIES</span>
+        <span id="strategies-status" class="status-badge status-offline">OFFLINE</span>
+      </div>
+      <div id="strategies-table-wrap">
+        <table id="strategies-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>Symbol</th>
+              <th>Side</th>
+              <th>Qty</th>
+              <th>Entry</th>
+              <th>TP</th>
+              <th>SL</th>
+              <th>Last</th>
+              <th>PnL</th>
+              <th>Equity</th>
+              <th>Trades</th>
+            </tr>
+          </thead>
+          <tbody id="strategies-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="rows"></div>
+
+    <template id="symbol-row">
+      <section class="symbol-row">
+        <div class="row-label">
+          <span class="strategy-name"></span><span class="strategy-symbol"></span>
+        </div>
+        <div class="ticker-panel">
+          <div class="last-price">—</div>
+          <div class="ticker-stats">
+            <span class="stat">
+              <span class="stat-label">CHG</span>
+              <span class="ticker-change">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">HIGH</span>
+              <span class="ticker-high">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">LOW</span>
+              <span class="ticker-low">—</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">VOL</span>
+              <span class="ticker-volume">—</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="symbol-grid">
+          <section class="chart-panel">
+            <div class="chart"></div>
+          </section>
+
+          <aside class="sidebar">
+            <div class="orderbook-panel">
+              <div class="panel-label">ORDER BOOK</div>
+              <div class="orderbook">
+                <div class="ob-header">
+                  <span>QTY</span>
+                  <span>PRICE</span>
+                </div>
+                <div class="asks-container"></div>
+                <div class="spread-bar"><span class="spread-value">—</span></div>
+                <div class="bids-container"></div>
+              </div>
+            </div>
+
+            <div class="trades-panel">
+              <div class="panel-label">RECENT TRADES</div>
+              <div class="trades-header">
+                <span>TIME</span>
+                <span>PRICE</span>
+                <span>QTY</span>
+              </div>
+              <div class="trades-list"></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </template>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="format.js"></script>
+  <script src="reconnecting-ws.js"></script>
+  <script src="ws.js"></script>
+  <script src="paper-ws.js"></script>
+  <script src="ticker.js"></script>
+  <script src="orderbook.js"></script>
+  <script src="trades.js"></script>
+  <script src="chart.js"></script>
+  <script src="strategies.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
