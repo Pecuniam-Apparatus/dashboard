@@ -416,11 +416,17 @@ body {
 
 .strategy-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   margin-right: 8px;
   vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.strat-name-cell {
+  font-weight: 600;
+  color: var(--text);
 }
 
 #strategies-table td.last-cell {
@@ -494,18 +500,29 @@ body {
     text-overflow: ellipsis;
   }
 
-  /* Hide Qty, Entry, TP, SL, Equity on mobile — too many columns to fit.
-     Keep: Strategy, Symbol, Side, Last, PnL, Trades */
+  /* Hide Symbol, Qty, Entry, TP, SL, Equity on mobile — they don't fit and
+     Symbol is almost always BTC/USD anyway. Keep: Strategy, Side, Last, PnL,
+     Trades. Free width goes to Strategy so the name fits. */
+  #strategies-table th:nth-child(2),
+  #strategies-table td:nth-child(2),  /* Symbol */
   #strategies-table th:nth-child(4),
-  #strategies-table td:nth-child(4),  /* Qty   */
+  #strategies-table td:nth-child(4),  /* Qty    */
   #strategies-table th:nth-child(5),
-  #strategies-table td:nth-child(5),  /* Entry */
+  #strategies-table td:nth-child(5),  /* Entry  */
   #strategies-table th:nth-child(6),
-  #strategies-table td:nth-child(6),  /* TP    */
+  #strategies-table td:nth-child(6),  /* TP     */
   #strategies-table th:nth-child(7),
-  #strategies-table td:nth-child(7),  /* SL    */
+  #strategies-table td:nth-child(7),  /* SL     */
   #strategies-table th:nth-child(10),
   #strategies-table td:nth-child(10) { display: none; } /* Equity */
+
+  /* Let the Strategy cell wrap to a second line instead of ellipsizing
+     "Doofus Rick" -> "Doo..." */
+  #strategies-table td.strat-name-cell {
+    white-space: normal;
+    line-height: 1.2;
+    word-break: break-word;
+  }
 
   .row-label {
     padding: 2px 10px;

@@ -158,14 +158,28 @@ function createChartPanel(root, cfg) {
     const o = getOverlay(snap.strategy_name);
     // Short label keeps the axis tag readable when several strategies overlap.
     const tag = snap.strategy_name.slice(0, 6);
-    if (snap.in_position) {
+    // Treat "side reports long/short" as in-position too — engines sometimes
+    // set side before clearing in_position or vice versa. Each line is then
+    // gated by its own price being > 0 so a partially-populated snapshot
+    // (e.g. entry filled but TP/SL not yet computed) still shows what it can
+    // instead of drawing nothing.
+    const inPos = snap.in_position
+      || snap.side === 'long' || snap.side === 'short';
+
+    if (inPos && snap.entry_price > 0) {
       o.entryLine = ensureLine(o.entryLine, snap.entry_price, o.color, `${tag} ENT`, LightweightCharts.LineStyle.Solid);
-      o.tpLine    = ensureLine(o.tpLine,    snap.tp_price,    o.color, `${tag} TP`,  LightweightCharts.LineStyle.Dashed);
-      o.slLine    = ensureLine(o.slLine,    snap.sl_price,    o.color, `${tag} SL`,  LightweightCharts.LineStyle.Dotted);
     } else {
       o.entryLine = removeLine(o.entryLine);
-      o.tpLine    = removeLine(o.tpLine);
-      o.slLine    = removeLine(o.slLine);
+    }
+    if (inPos && snap.tp_price > 0) {
+      o.tpLine = ensureLine(o.tpLine, snap.tp_price, o.color, `${tag} TP`, LightweightCharts.LineStyle.Dashed);
+    } else {
+      o.tpLine = removeLine(o.tpLine);
+    }
+    if (inPos && snap.sl_price > 0) {
+      o.slLine = ensureLine(o.slLine, snap.sl_price, o.color, `${tag} SL`, LightweightCharts.LineStyle.Dotted);
+    } else {
+      o.slLine = removeLine(o.slLine);
     }
   }
 
