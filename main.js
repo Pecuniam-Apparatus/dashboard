@@ -1,12 +1,12 @@
 (function () {
   const cfg = { ws: 'BTC/USD', pair: 'XBTUSD', label: 'BTC/USD' };
 
-  const statusEl = document.getElementById('ws-status');
   const rowsEl   = document.getElementById('rows');
   const template = document.getElementById('symbol-row');
 
   const node = template.content.firstElementChild.cloneNode(true);
-  node.querySelector('.row-label').textContent = cfg.label;
+  node.querySelector('.row-label-text').textContent = cfg.label;
+  const statusEl = node.querySelector('.ws-status');
   rowsEl.appendChild(node);
 
   const ticker    = createTicker(node);
@@ -16,7 +16,7 @@
   chart.init();
 
   KrakenWS.onStatus(status => {
-    statusEl.textContent = '● ' + status;
+    statusEl.textContent = status;
     statusEl.className = 'ws-status ' + status.toLowerCase();
   });
 

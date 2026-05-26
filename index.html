@@ -18,7 +18,6 @@
         <button class="tf" data-interval="240">4h</button>
         <button class="tf" data-interval="1440">1D</button>
       </div>
-      <span id="ws-status" class="ws-status connecting">● CONNECTING</span>
     </header>
 
     <section id="strategies-panel">
@@ -45,7 +44,10 @@
 
     <template id="symbol-row">
       <section class="symbol-row">
-        <div class="row-label"></div>
+        <div class="row-label">
+          <span class="row-label-text"></span>
+          <span class="ws-status connecting">CONNECTING</span>
+        </div>
         <div class="ticker-panel">
           <div class="last-price">—</div>
           <div class="ticker-stats">
