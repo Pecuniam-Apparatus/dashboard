@@ -9,11 +9,13 @@
     'SOL/USD': { ws: 'SOL/USD', pair: 'SOLUSD' },
   };
 
-  const statusEl = document.getElementById('ws-status');
   const rowsEl   = document.getElementById('rows');
   const template = document.getElementById('symbol-row');
 
   let currentInterval = 60;
+  // Track latest Kraken status so rows created later (per-strategy) initialize
+  // their ws-status badge in the right state instead of stuck on CONNECTING.
+  let lastKrakenStatus = 'CONNECTING';
 
   // Per-row tracking. `kind` distinguishes the always-on market row from
   // per-strategy rows so we can skip strategy overlays on the base row.
@@ -35,6 +37,9 @@
     const node = template.content.firstElementChild.cloneNode(true);
     node.querySelector('.strategy-name').textContent = label.name;
     node.querySelector('.strategy-symbol').textContent = label.symbol ? `— ${label.symbol}` : '';
+    const statusEl = node.querySelector('.ws-status');
+    statusEl.textContent = lastKrakenStatus;
+    statusEl.className = 'ws-status ' + lastKrakenStatus.toLowerCase();
     rowsEl.appendChild(node);
 
     const ticker    = createTicker(node);
@@ -43,7 +48,7 @@
     const chart     = createChartPanel(node, cfg);
     chart.init();
 
-    return { node, ticker, orderbook, trades, chart, symbol };
+    return { node, statusEl, ticker, orderbook, trades, chart, symbol };
   }
 
   function subscribeSymbol(symbol) {
@@ -76,8 +81,12 @@
   // ---- Kraken fan-out ----
 
   KrakenWS.onStatus(status => {
-    statusEl.textContent = '● ' + status;
-    statusEl.className = 'ws-status ' + status.toLowerCase();
+    lastKrakenStatus = status;
+    const cls = 'ws-status ' + status.toLowerCase();
+    entries.forEach(e => {
+      e.statusEl.textContent = status;
+      e.statusEl.className = cls;
+    });
   });
 
   // Kraken v2 always tucks the symbol into data[0].symbol regardless of
