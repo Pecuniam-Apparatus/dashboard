@@ -500,9 +500,9 @@ body {
     text-overflow: ellipsis;
   }
 
-  /* Hide Symbol, Qty, Entry, TP, SL, Equity on mobile — they don't fit and
-     Symbol is almost always BTC/USD anyway. Keep: Strategy, Side, Last, PnL,
-     Trades. Free width goes to Strategy so the name fits. */
+  /* Hide Symbol, Qty, Entry, TP, SL, Last on mobile — they don't fit and
+     Symbol is almost always BTC/USD anyway. Keep: Strategy, Side, PnL,
+     Equity, Trades. Free width goes to Strategy so the name fits. */
   #strategies-table th:nth-child(2),
   #strategies-table td:nth-child(2),  /* Symbol */
   #strategies-table th:nth-child(4),
@@ -513,8 +513,8 @@ body {
   #strategies-table td:nth-child(6),  /* TP     */
   #strategies-table th:nth-child(7),
   #strategies-table td:nth-child(7),  /* SL     */
-  #strategies-table th:nth-child(10),
-  #strategies-table td:nth-child(10) { display: none; } /* Equity */
+  #strategies-table th:nth-child(8),
+  #strategies-table td:nth-child(8) { display: none; } /* Last */
 
   /* Let the Strategy cell wrap to a second line instead of ellipsizing
      "Doofus Rick" -> "Doo..." */
