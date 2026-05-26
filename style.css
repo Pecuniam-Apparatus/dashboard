@@ -77,25 +77,20 @@ body {
 }
 
 .symbol-row {
-  flex: 2;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--border);
-  border-left: 4px solid var(--accent, var(--border));
-}
-
-.symbol-row.no-chart {
-  flex: 1;
 }
 
 .row-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent, var(--orange));
+  color: var(--orange);
   letter-spacing: 0.12em;
   padding: 4px 12px;
-  background: color-mix(in srgb, var(--accent, transparent) 14%, #0d0d0d);
+  background: #0d0d0d;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -159,37 +154,17 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: color-mix(in srgb, var(--accent, transparent) 13%, var(--panel));
-}
-
-/* ---- CHART-LESS ROW (ETH/SOL): panels side-by-side, full width ---- */
-
-.symbol-row.no-chart .sidebar {
-  width: 100%;
-  flex-direction: row;
-}
-
-.symbol-row.no-chart .ticker-panel,
-.symbol-row.no-chart .orderbook-panel,
-.symbol-row.no-chart .trades-panel {
-  flex: 1 1 0;
-  min-width: 0;
-  border-bottom: none;
-}
-
-.symbol-row.no-chart .ticker-panel,
-.symbol-row.no-chart .orderbook-panel {
-  border-right: 1px solid var(--border);
+  background: var(--panel);
 }
 
 .panel-label {
   font-size: 10px;
   font-weight: 600;
-  color: var(--accent, var(--orange));
+  color: var(--orange);
   letter-spacing: 0.14em;
   padding: 7px 12px 5px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent, transparent) 9%, #0d0d0d);
+  background: #0d0d0d;
 }
 
 /* ---- TICKER ---- */
@@ -410,7 +385,7 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
 
-/* ---- MOBILE (≤ 768px): condense all 3 pairs into one no-scroll screen ---- */
+/* ---- MOBILE (≤ 768px): single BTC pair fills the screen ---- */
 
 @media (max-width: 768px) {
   body {
@@ -424,114 +399,73 @@ body {
     height: 100dvh;
   }
 
-  /* Keep strategies bounded so it can't crowd out the pairs */
+  /* Header wraps to two rows: brand + status on top, timeframe bar below */
+  #header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 40px;
+    padding: 6px 10px;
+    gap: 6px 10px;
+  }
+
+  .brand {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  #timeframe-bar {
+    order: 3;
+    width: 100%;
+  }
+
+  /* Strategies: fixed layout so all 5 columns fit; ellipsize Last Trade */
   #strategies-table-wrap {
-    max-height: 92px;
+    max-height: 110px;
   }
 
-  /* Pairs fill the remaining viewport, split proportionally (BTC dominant) */
-  .symbol-row {
-    flex: 5;
+  #strategies-table {
+    table-layout: fixed;
   }
 
-  .symbol-row.no-chart {
-    flex: 2;
+  #strategies-table th,
+  #strategies-table td {
+    padding: 6px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+
+  #strategies-table th:nth-child(1),
+  #strategies-table td:nth-child(1) { width: 22%; }   /* Name */
+  #strategies-table th:nth-child(2),
+  #strategies-table td:nth-child(2) { width: 22%; }   /* Status */
+  #strategies-table th:nth-child(3),
+  #strategies-table td:nth-child(3) { width: 16%; }   /* Pair */
+  #strategies-table th:nth-child(4),
+  #strategies-table td:nth-child(4) { width: 14%; }   /* PnL */
+  /* Last Trade (5th) takes the remainder and ellipsizes */
 
   .row-label {
     padding: 2px 10px;
   }
 
-  /* Chart on top, compact sidebar band below */
+  /* Chart on top, panels stacked vertically below */
   .symbol-grid {
     flex-direction: column;
   }
 
-  /* Chart fills BTC's space above its sidebar band */
   .chart-panel {
-    flex: 1;
+    flex: 1.2;
     min-height: 0;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
 
-  /* Sidebar = compact horizontal band for every pair */
   .sidebar {
     width: 100%;
-    flex-direction: row;
-  }
-
-  /* BTC: pin the band under the chart at a fixed short height */
-  .symbol-row:not(.no-chart) .sidebar {
-    height: 110px;
-    flex-shrink: 0;
-  }
-
-  /* ETH/SOL: band fills the whole (chart-less) row */
-  .symbol-row.no-chart .sidebar {
     flex: 1;
     min-height: 0;
-  }
-
-  /* Two readable columns side by side: ticker | order book */
-  .ticker-panel,
-  .orderbook-panel {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 0;
-    border-bottom: none;
-    overflow: hidden;
-  }
-
-  .ticker-panel {
-    border-right: 1px solid var(--border);
-  }
-
-  .symbol-row.no-chart .orderbook-panel {
-    border-right: none;
-  }
-
-  /* Trades feed dropped on mobile to keep the band uncramped */
-  .trades-panel {
-    display: none;
-  }
-
-  /* Density tweaks so the band stays short */
-  .panel-label {
-    font-size: 9px;
-    padding: 4px 10px 3px;
-  }
-
-  .last-price {
-    font-size: 15px;
-    padding: 3px 10px 1px;
-  }
-
-  .ticker-stats {
-    gap: 3px 0;
-    padding: 1px 10px 5px;
-  }
-
-  .stat {
-    font-size: 10px;
-  }
-
-  .stat-label {
-    font-size: 8px;
-  }
-
-  .ob-header {
-    font-size: 8px;
-    padding: 3px 10px;
-  }
-
-  .ob-row {
-    font-size: 9px;
-    padding: 0 10px;
-  }
-
-  .spread-bar {
-    font-size: 9px;
-    padding: 1px 0;
   }
 }
