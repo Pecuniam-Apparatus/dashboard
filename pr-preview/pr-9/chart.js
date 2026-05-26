@@ -136,7 +136,7 @@ function createChartPanel(root, cfg) {
     const opts = {
       price,
       color,
-      lineWidth: 1,
+      lineWidth: 2,
       lineStyle: style,
       axisLabelVisible: true,
       title,
@@ -158,28 +158,40 @@ function createChartPanel(root, cfg) {
     const o = getOverlay(snap.strategy_name);
     // Short label keeps the axis tag readable when several strategies overlap.
     const tag = snap.strategy_name.slice(0, 6);
-    // Treat "side reports long/short" as in-position too — engines sometimes
-    // set side before clearing in_position or vice versa. Each line is then
-    // gated by its own price being > 0 so a partially-populated snapshot
-    // (e.g. entry filled but TP/SL not yet computed) still shows what it can
-    // instead of drawing nothing.
-    const inPos = snap.in_position
-      || snap.side === 'long' || snap.side === 'short';
 
-    if (inPos && snap.entry_price > 0) {
-      o.entryLine = ensureLine(o.entryLine, snap.entry_price, o.color, `${tag} ENT`, LightweightCharts.LineStyle.Solid);
+    // Trust the price fields directly: if the engine reports a non-zero
+    // price, draw it. This avoids any in_position / side mismatch confusion.
+    const entry = Number(snap.entry_price) || 0;
+    const tp = Number(snap.tp_price) || 0;
+    const sl = Number(snap.sl_price) || 0;
+
+    if (entry > 0) {
+      o.entryLine = ensureLine(o.entryLine, entry, o.color, `${tag} ENT`, LightweightCharts.LineStyle.Solid);
     } else {
       o.entryLine = removeLine(o.entryLine);
     }
-    if (inPos && snap.tp_price > 0) {
-      o.tpLine = ensureLine(o.tpLine, snap.tp_price, o.color, `${tag} TP`, LightweightCharts.LineStyle.Dashed);
+    if (tp > 0) {
+      o.tpLine = ensureLine(o.tpLine, tp, o.color, `${tag} TP`, LightweightCharts.LineStyle.Dashed);
     } else {
       o.tpLine = removeLine(o.tpLine);
     }
-    if (inPos && snap.sl_price > 0) {
-      o.slLine = ensureLine(o.slLine, snap.sl_price, o.color, `${tag} SL`, LightweightCharts.LineStyle.Dotted);
+    if (sl > 0) {
+      o.slLine = ensureLine(o.slLine, sl, o.color, `${tag} SL`, LightweightCharts.LineStyle.Dotted);
     } else {
       o.slLine = removeLine(o.slLine);
+    }
+
+    // One-shot diagnostic per strategy state transition: log what the engine
+    // actually sent so we can confirm whether the issue is engine-side (all
+    // zeros) or dashboard-side. Only logs when something changes.
+    const sig = `${snap.in_position}|${snap.side}|${entry}|${tp}|${sl}`;
+    if (o.lastSig !== sig) {
+      o.lastSig = sig;
+      // eslint-disable-next-line no-console
+      console.info('[strategy]', snap.strategy_name, {
+        in_position: snap.in_position, side: snap.side,
+        entry_price: snap.entry_price, tp_price: snap.tp_price, sl_price: snap.sl_price,
+      });
     }
   }
 
