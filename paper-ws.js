@@ -44,62 +44,64 @@ const PaperWS = (() => {
 
   function startMock() {
     if (statusCallback) statusCallback('LIVE');
-    let t0 = Date.now();
-    const fills = [];
-    let inPos = false;
-    let entry = 0;
-    let cyclesUntilFlip = 8;
+    const t0 = Date.now();
 
-    setInterval(() => {
-      const price = 76500 + Math.sin((Date.now() - t0) / 4000) * 80;
-      if (--cyclesUntilFlip <= 0) {
-        cyclesUntilFlip = 12 + Math.floor(Math.random() * 20);
-        if (!inPos) {
-          inPos = true;
-          entry = price;
-          fills.push({ ts_ms: Date.now(), price, side: 'long', type: 'entry' });
-        } else {
-          inPos = false;
-          const exitType = price >= entry ? 'tp_exit' : 'sl_exit';
-          fills.push({ ts_ms: Date.now(), price, side: 'long', type: exitType });
-          entry = 0;
-        }
+    // Two independent strategy generators so the dashboard can demo
+    // multi-strategy color-coded overlays on a single chart.
+    function makeStrat(qty, tp, sl, startCountdown) {
+      return {
+        fills: [], inPos: false, entry: 0, cyclesUntilFlip: startCountdown,
+        qty, tp, sl,
+      };
+    }
+    const stratA = makeStrat(0.05, 100, 60, 8);
+    const stratB = makeStrat(0.03, 70, 45, 16);
+
+    function tickStrat(s, price) {
+      if (--s.cyclesUntilFlip > 0) return;
+      s.cyclesUntilFlip = 12 + Math.floor(Math.random() * 20);
+      if (!s.inPos) {
+        s.inPos = true;
+        s.entry = price;
+        s.fills.push({ ts_ms: Date.now(), price, side: 'long', type: 'entry' });
+      } else {
+        const exitType = price >= s.entry ? 'tp_exit' : 'sl_exit';
+        s.fills.push({ ts_ms: Date.now(), price, side: 'long', type: exitType });
+        s.inPos = false;
+        s.entry = 0;
       }
+    }
 
-      const snapA = {
-        strategy_name: 'Doofus Rick',
+    function snap(name, s, price) {
+      return {
+        strategy_name: name,
         symbol: 'BTC/USD',
         ts_ms: Date.now(),
         last_price: price,
         best_bid: price - 0.5,
         best_ask: price + 0.5,
-        in_position: inPos,
-        side: inPos ? 'long' : 'flat',
-        position_qty: inPos ? 0.05 : 0,
-        entry_price: inPos ? entry : 0,
-        tp_price: inPos ? entry + 100 : 0,
-        sl_price: inPos ? entry - 60 : 0,
+        in_position: s.inPos,
+        side: s.inPos ? 'long' : 'flat',
+        position_qty: s.inPos ? s.qty : 0,
+        entry_price: s.inPos ? s.entry : 0,
+        tp_price: s.inPos ? s.entry + s.tp : 0,
+        sl_price: s.inPos ? s.entry - s.sl : 0,
         cash_usd: 100000,
-        equity: 100000 + (inPos ? (price - entry) * 0.05 : 0),
-        unrealized_pnl: inPos ? (price - entry) * 0.05 : 0,
-        trade_count: Math.floor(fills.length / 2),
-        fills: fills.slice(),
+        equity: 100000 + (s.inPos ? (price - s.entry) * s.qty : 0),
+        unrealized_pnl: s.inPos ? (price - s.entry) * s.qty : 0,
+        trade_count: Math.floor(s.fills.length / 2),
+        fills: s.fills.slice(),
       };
-      const snapB = {
-        ...snapA,
-        strategy_name: 'Turbo Doofus Rick',
-        in_position: false,
-        side: 'flat',
-        position_qty: 0,
-        entry_price: 0,
-        tp_price: 0,
-        sl_price: 0,
-        unrealized_pnl: 0,
-        equity: 100000,
-        trade_count: 0,
-        fills: [],
-      };
-      dispatch([snapA, snapB]);
+    }
+
+    setInterval(() => {
+      const price = 76500 + Math.sin((Date.now() - t0) / 4000) * 80;
+      tickStrat(stratA, price);
+      tickStrat(stratB, price);
+      dispatch([
+        snap('Doofus Rick', stratA, price),
+        snap('Turbo Doofus Rick', stratB, price),
+      ]);
     }, 250);
   }
 

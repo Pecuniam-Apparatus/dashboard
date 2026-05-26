@@ -5,10 +5,22 @@ function createChartPanel(root, cfg) {
   let chart = null;
   let series = null;
 
-  let tpLine = null;
-  let slLine = null;
-  let entryLine = null;
-  let lastFillCount = -1;
+  // Overlay state is per-strategy so the chart can show multiple strategies'
+  // TP/SL/entry lines and fill markers at once, all color-coded by strategy.
+  // key: strategy_name -> { entryLine, tpLine, slLine, fills, color }
+  const overlays = new Map();
+  let lastMarkerSig = '';
+
+  function colorForStrategy(name) {
+    // Deterministic hue from the strategy name; fixed S/L keep contrast
+    // consistent against the dark theme.
+    let h = 0;
+    for (let i = 0; i < name.length; i++) {
+      h = (h * 31 + name.charCodeAt(i)) | 0;
+    }
+    const hue = ((h % 360) + 360) % 360;
+    return `hsl(${hue}, 70%, 62%)`;
+  }
 
   function init() {
     chart = LightweightCharts.createChart(container, {
@@ -107,12 +119,25 @@ function createChartPanel(root, cfg) {
 
   // ---- Strategy overlays ----
 
-  function ensureLine(handle, price, color, title, solid) {
+  function getOverlay(name) {
+    let o = overlays.get(name);
+    if (!o) {
+      o = {
+        entryLine: null, tpLine: null, slLine: null,
+        fills: [],
+        color: colorForStrategy(name),
+      };
+      overlays.set(name, o);
+    }
+    return o;
+  }
+
+  function ensureLine(handle, price, color, title, style) {
     const opts = {
       price,
       color,
       lineWidth: 1,
-      lineStyle: solid ? LightweightCharts.LineStyle.Solid : LightweightCharts.LineStyle.Dashed,
+      lineStyle: style,
       axisLabelVisible: true,
       title,
     };
@@ -130,55 +155,89 @@ function createChartPanel(root, cfg) {
 
   function applyStrategyState(snap) {
     if (!series) return;
+    const o = getOverlay(snap.strategy_name);
+    // Short label keeps the axis tag readable when several strategies overlap.
+    const tag = snap.strategy_name.slice(0, 6);
     if (snap.in_position) {
-      entryLine = ensureLine(entryLine, snap.entry_price, '#ff6600', 'ENT', true);
-      tpLine    = ensureLine(tpLine,    snap.tp_price,    '#00c805', 'TP',  false);
-      slLine    = ensureLine(slLine,    snap.sl_price,    '#ff3b30', 'SL',  false);
+      o.entryLine = ensureLine(o.entryLine, snap.entry_price, o.color, `${tag} ENT`, LightweightCharts.LineStyle.Solid);
+      o.tpLine    = ensureLine(o.tpLine,    snap.tp_price,    o.color, `${tag} TP`,  LightweightCharts.LineStyle.Dashed);
+      o.slLine    = ensureLine(o.slLine,    snap.sl_price,    o.color, `${tag} SL`,  LightweightCharts.LineStyle.Dotted);
     } else {
-      entryLine = removeLine(entryLine);
-      tpLine    = removeLine(tpLine);
-      slLine    = removeLine(slLine);
+      o.entryLine = removeLine(o.entryLine);
+      o.tpLine    = removeLine(o.tpLine);
+      o.slLine    = removeLine(o.slLine);
     }
   }
 
-  function markerFor(fill) {
+  function markerFor(fill, color) {
     const long = fill.side === 'long';
     const time = Math.floor(fill.ts_ms / 1000);
     if (fill.type === 'entry') {
       return long
-        ? { time, position: 'belowBar', shape: 'arrowUp',   color: '#00c805', text: 'L' }
-        : { time, position: 'aboveBar', shape: 'arrowDown', color: '#ff3b30', text: 'S' };
+        ? { time, position: 'belowBar', shape: 'arrowUp',   color, text: 'L' }
+        : { time, position: 'aboveBar', shape: 'arrowDown', color, text: 'S' };
     }
     if (fill.type === 'tp_exit') {
-      return long
-        ? { time, position: 'aboveBar', shape: 'circle', color: '#00c805', text: 'TP' }
-        : { time, position: 'belowBar', shape: 'circle', color: '#00c805', text: 'TP' };
+      return {
+        time,
+        position: long ? 'aboveBar' : 'belowBar',
+        shape: 'circle', color, text: 'TP',
+      };
     }
     // sl_exit
-    return long
-      ? { time, position: 'aboveBar', shape: 'circle', color: '#ff3b30', text: 'SL' }
-      : { time, position: 'belowBar', shape: 'circle', color: '#ff3b30', text: 'SL' };
+    return {
+      time,
+      position: long ? 'aboveBar' : 'belowBar',
+      shape: 'circle', color, text: 'SL',
+    };
   }
 
-  function applyFills(fills) {
+  function renderMarkers() {
+    if (!series) return;
+    const all = [];
+    overlays.forEach(o => {
+      o.fills.forEach(f => all.push(markerFor(f, o.color)));
+    });
+    all.sort((a, b) => a.time - b.time);
+    // Cheap signature so the redraw is skipped when nothing changed across
+    // ticks (the feed re-sends the full fill array every 250 ms).
+    const sig = all.length + ':' + (all.length ? all[all.length - 1].time : 0);
+    if (sig === lastMarkerSig) return;
+    lastMarkerSig = sig;
+    series.setMarkers(all);
+  }
+
+  function applyFills(strategyName, fills) {
     if (!series || !fills) return;
-    // Full session history arrives every tick. Skip the redraw when nothing
-    // new has appended, otherwise we'd rebuild markers 4× per second.
-    if (fills.length === lastFillCount) return;
-    lastFillCount = fills.length;
-    const markers = fills
-      .map(markerFor)
-      .sort((a, b) => a.time - b.time);
-    series.setMarkers(markers);
+    const o = getOverlay(strategyName);
+    o.fills = fills;
+    renderMarkers();
+  }
+
+  function removeStrategy(strategyName) {
+    const o = overlays.get(strategyName);
+    if (!o) return;
+    o.entryLine = removeLine(o.entryLine);
+    o.tpLine    = removeLine(o.tpLine);
+    o.slLine    = removeLine(o.slLine);
+    overlays.delete(strategyName);
+    renderMarkers();
   }
 
   function clearOverlays() {
-    entryLine = removeLine(entryLine);
-    tpLine    = removeLine(tpLine);
-    slLine    = removeLine(slLine);
+    overlays.forEach(o => {
+      o.entryLine = removeLine(o.entryLine);
+      o.tpLine    = removeLine(o.tpLine);
+      o.slLine    = removeLine(o.slLine);
+    });
+    overlays.clear();
     if (series) series.setMarkers([]);
-    lastFillCount = -1;
+    lastMarkerSig = '';
   }
 
-  return { init, handleOHLC, switchInterval, applyStrategyState, applyFills, clearOverlays };
+  return {
+    init, handleOHLC, switchInterval,
+    applyStrategyState, applyFills, removeStrategy, clearOverlays,
+    colorForStrategy,
+  };
 }

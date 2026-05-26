@@ -1,42 +1,36 @@
 (function () {
-  const BASE_CFG = { ws: 'BTC/USD', pair: 'XBTUSD', label: 'BTC/USD' };
-
-  // Map symbol -> Kraken subscription cfg for chart history REST. Used both by
-  // the always-on BTC/USD market row and any per-strategy rows created later.
+  // Kraken-symbol cfg used for chart REST history and as the canonical pair name.
+  // Add more entries here if the strategy feed starts reporting other symbols.
   const SYMBOL_CFG = {
-    'BTC/USD': { ws: 'BTC/USD', pair: 'XBTUSD' },
-    'ETH/USD': { ws: 'ETH/USD', pair: 'XETHZUSD' },
-    'SOL/USD': { ws: 'SOL/USD', pair: 'SOLUSD' },
+    'BTC/USD': { pair: 'XBTUSD', label: 'BTC/USD' },
+    'ETH/USD': { pair: 'XETHZUSD', label: 'ETH/USD' },
+    'SOL/USD': { pair: 'SOLUSD', label: 'SOL/USD' },
   };
+  const BASE_SYMBOL = 'BTC/USD';
+  const STRATEGY_STALE_MS = 10000;
 
   const rowsEl   = document.getElementById('rows');
   const template = document.getElementById('symbol-row');
 
   let currentInterval = 60;
-  // Track latest Kraken status so rows created later (per-strategy) initialize
-  // their ws-status badge in the right state instead of stuck on CONNECTING.
   let lastKrakenStatus = 'CONNECTING';
 
-  // Per-row tracking. `kind` distinguishes the always-on market row from
-  // per-strategy rows so we can skip strategy overlays on the base row.
-  // strategies: key "name|symbol" -> entry. The base row uses key "__base__".
-  const entries = new Map();
-  // symbolRefs counts how many rows (base + strategies) are subscribed to a
-  // given Kraken symbol; we keep ONE Kraken subscription per symbol, fanned
-  // out to every consumer with `bySymbol` below.
-  const symbolRefs = new Map();
-  const bySymbol = new Map(); // symbol -> Set<entry>
+  // One entry per unique symbol. Multiple strategies on the same symbol all
+  // share that symbol's chart and have their overlays color-coded.
+  const symbols = new Map(); // symbol -> { node, statusEl, ticker, orderbook, trades, chart }
+  // Per-strategy bookkeeping so a strategy that drops out of the broadcast for
+  // STRATEGY_STALE_MS gets its lines/markers removed from the chart.
+  const liveStrategies = new Map(); // strategy_name -> { symbol, lastSeenMs }
 
-  function indexAdd(entry) {
-    let set = bySymbol.get(entry.symbol);
-    if (!set) { set = new Set(); bySymbol.set(entry.symbol, set); }
-    set.add(entry);
-  }
-
-  function newRow(symbol, cfg, label) {
+  function createSymbolRow(symbol) {
+    const cfg = SYMBOL_CFG[symbol];
+    if (!cfg) {
+      console.warn('Unknown symbol; cannot render row:', symbol);
+      return null;
+    }
     const node = template.content.firstElementChild.cloneNode(true);
-    node.querySelector('.strategy-name').textContent = label.name;
-    node.querySelector('.strategy-symbol').textContent = label.symbol ? `— ${label.symbol}` : '';
+    node.querySelector('.strategy-name').textContent = cfg.label;
+    node.querySelector('.strategy-symbol').textContent = '';
     const statusEl = node.querySelector('.ws-status');
     statusEl.textContent = lastKrakenStatus;
     statusEl.className = 'ws-status ' + lastKrakenStatus.toLowerCase();
@@ -45,114 +39,85 @@
     const ticker    = createTicker(node);
     const orderbook = createOrderBook(node);
     const trades    = createTradesFeed(node);
-    const chart     = createChartPanel(node, cfg);
+    const chart     = createChartPanel(node, { pair: cfg.pair });
     chart.init();
 
-    return { node, statusEl, ticker, orderbook, trades, chart, symbol };
-  }
+    const entry = { node, statusEl, ticker, orderbook, trades, chart, symbol };
+    symbols.set(symbol, entry);
 
-  function subscribeSymbol(symbol) {
     const sub = [symbol];
     KrakenWS.subscribe({ channel: 'ticker', symbol: sub });
     KrakenWS.subscribe({ channel: 'book',   symbol: sub, depth: 25 });
     KrakenWS.subscribe({ channel: 'trade',  symbol: sub });
     KrakenWS.subscribe({ channel: 'ohlc',   symbol: sub, interval: currentInterval });
+
+    return entry;
   }
 
-  function ensureSymbol(symbol) {
-    const next = (symbolRefs.get(symbol) || 0) + 1;
-    symbolRefs.set(symbol, next);
-    if (next === 1) subscribeSymbol(symbol);
-  }
+  // Always-on BTC/USD market view, even when no strategies are running.
+  createSymbolRow(BASE_SYMBOL);
 
-  // ---- Base BTC/USD market row (always-on, no strategy overlays) ----
-
-  const baseEntry = newRow(
-    BASE_CFG.ws,
-    { pair: BASE_CFG.pair },
-    { name: BASE_CFG.label, symbol: '' }
-  );
-  baseEntry.kind = 'base';
-  baseEntry.lastSeenMs = Infinity; // never goes stale
-  entries.set('__base__', baseEntry);
-  indexAdd(baseEntry);
-  ensureSymbol(BASE_CFG.ws);
-
-  // ---- Kraken fan-out ----
+  // ---- Kraken fan-out: one symbol -> one row ----
 
   KrakenWS.onStatus(status => {
     lastKrakenStatus = status;
     const cls = 'ws-status ' + status.toLowerCase();
-    entries.forEach(e => {
+    symbols.forEach(e => {
       e.statusEl.textContent = status;
       e.statusEl.className = cls;
     });
   });
 
-  // Kraken v2 always tucks the symbol into data[0].symbol regardless of
-  // channel (ticker, book, trade, ohlc).
-  function fanout(m, fn) {
+  function dispatch(m, fn) {
     if (!m.data || !m.data[0]) return;
-    const set = bySymbol.get(m.data[0].symbol);
-    if (set) set.forEach(e => fn(e));
+    const e = symbols.get(m.data[0].symbol);
+    if (e) fn(e);
   }
 
-  KrakenWS.on('ticker', m => fanout(m, e => e.ticker.update(m.data[0])));
-  KrakenWS.on('book',   m => fanout(m, e => e.orderbook.handle(m)));
-  KrakenWS.on('trade',  m => fanout(m, e => e.trades.handle(m)));
-  KrakenWS.on('ohlc',   m => fanout(m, e => e.chart.handleOHLC(m)));
+  KrakenWS.on('ticker', m => dispatch(m, e => e.ticker.update(m.data[0])));
+  KrakenWS.on('book',   m => dispatch(m, e => e.orderbook.handle(m)));
+  KrakenWS.on('trade',  m => dispatch(m, e => e.trades.handle(m)));
+  KrakenWS.on('ohlc',   m => dispatch(m, e => e.chart.handleOHLC(m)));
 
   KrakenWS.connect();
 
-  // ---- PaperWS: per-strategy rows ----
-
-  function ensureStrategy(snap) {
-    const key = `${snap.strategy_name}|${snap.symbol}`;
-    let entry = entries.get(key);
-    if (entry) return entry;
-
-    const cfg = SYMBOL_CFG[snap.symbol];
-    if (!cfg) {
-      console.warn('Unknown symbol in strategy feed:', snap.symbol);
-      return null;
-    }
-
-    entry = newRow(
-      cfg.ws,
-      { pair: cfg.pair },
-      { name: snap.strategy_name, symbol: snap.symbol }
-    );
-    entry.kind = 'strategy';
-    entry.key = key;
-    entry.lastSeenMs = Date.now();
-    entries.set(key, entry);
-    indexAdd(entry);
-    ensureSymbol(cfg.ws);
-    return entry;
-  }
+  // ---- PaperWS: route strategy overlays onto each symbol's chart ----
 
   PaperWS.onStatus(status => { if (status !== 'LIVE') Strategies.setOffline(); });
   PaperWS.onMessage(arr => {
+    const now = Date.now();
     arr.forEach(snap => {
-      const entry = ensureStrategy(snap);
-      if (!entry) return;
-      entry.lastSeenMs = Date.now();
-      entry.node.classList.remove('stale');
-      entry.chart.applyStrategyState(snap);
-      entry.chart.applyFills(snap.fills || []);
+      const symbolEntry = symbols.get(snap.symbol) || createSymbolRow(snap.symbol);
+      if (!symbolEntry) return;
+      // If a strategy migrated to a new symbol, clear its overlays from the
+      // old chart before drawing on the new one.
+      const prev = liveStrategies.get(snap.strategy_name);
+      if (prev && prev.symbol !== snap.symbol) {
+        const oldEntry = symbols.get(prev.symbol);
+        if (oldEntry) oldEntry.chart.removeStrategy(snap.strategy_name);
+      }
+      liveStrategies.set(snap.strategy_name, { symbol: snap.symbol, lastSeenMs: now });
+      symbolEntry.chart.applyStrategyState(snap);
+      symbolEntry.chart.applyFills(snap.strategy_name, snap.fills || []);
     });
     Strategies.applyAll(arr);
   });
   PaperWS.connect();
 
-  // ---- Stale sweep: grey rows that haven't been broadcast in 10s ----
+  // Expose the color hash to the table so strategy dots match chart overlays.
+  // Uses any chart's helper — they all hash identically.
+  const sampleChart = symbols.get(BASE_SYMBOL).chart;
+  Strategies.setColorFn(sampleChart.colorForStrategy);
+
+  // ---- Stale sweep: drop overlays for strategies that haven't broadcast in 10s ----
 
   setInterval(() => {
     const now = Date.now();
-    entries.forEach(e => {
-      if (e.kind !== 'strategy') return;
-      const stale = now - e.lastSeenMs > 10000;
-      e.node.classList.toggle('stale', stale);
+    liveStrategies.forEach((info, name) => {
+      if (now - info.lastSeenMs <= STRATEGY_STALE_MS) return;
+      const entry = symbols.get(info.symbol);
+      if (entry) entry.chart.removeStrategy(name);
+      liveStrategies.delete(name);
     });
   }, 2000);
 
@@ -166,11 +131,14 @@
       const prev = currentInterval;
       currentInterval = interval;
 
-      symbolRefs.forEach((_count, symbol) => {
+      symbols.forEach((_e, symbol) => {
         KrakenWS.unsubscribe({ channel: 'ohlc', symbol: [symbol], interval: prev });
         KrakenWS.subscribe({   channel: 'ohlc', symbol: [symbol], interval });
       });
-      entries.forEach(e => e.chart.switchInterval(interval));
+      // switchInterval clears overlays as a side effect — they'll be redrawn
+      // on the next PaperWS tick. liveStrategies stays so the sweep can still
+      // garbage-collect strategies that go silent.
+      symbols.forEach(e => e.chart.switchInterval(interval));
       tfButtons.forEach(b => b.classList.toggle('active', Number(b.dataset.interval) === interval));
     });
   });
