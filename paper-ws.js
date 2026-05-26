@@ -4,7 +4,7 @@ const PaperWS = (() => {
   // The far end runs the gambit dashboard WS (see GAMBIT_WS_HOST/PORT) tunneled
   // through cloudflared. Broadcasts a JSON array every 250 ms, one element per
   // running strategy. See schema in PaperWS.onMessage callback contract below.
-  const WS_URL = 'wss://calvin-eminem-ensuring-memories.trycloudflare.com';
+  const WS_URL = 'wss://bell-ipod-kilometers-producer.trycloudflare.com';
   let messageCallback = null;
   let statusCallback = null;
   let conn = null;
