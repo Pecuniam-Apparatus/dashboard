@@ -15,13 +15,6 @@ function createOrderBook(root) {
     });
   }
 
-  function fmt(n, dec = 2) {
-    return parseFloat(n).toLocaleString('en-US', {
-      minimumFractionDigits: dec,
-      maximumFractionDigits: dec,
-    });
-  }
-
   function sortedTop(map, descending) {
     return Array.from(map.entries())
       .sort((a, b) => descending
@@ -37,8 +30,8 @@ function createOrderBook(root) {
         ? `background: linear-gradient(to left, rgba(0,200,5,0.12) ${pct}%, transparent ${pct}%)`
         : `background: linear-gradient(to right, rgba(255,59,48,0.12) ${pct}%, transparent ${pct}%)`;
       return `<div class="ob-row ${side}" style="${bar}">
-        <span class="ob-qty">${fmt(qty, 4)}</span>
-        <span class="ob-price">${fmt(price)}</span>
+        <span class="ob-qty">${Fmt.num(qty, 4)}</span>
+        <span class="ob-price">${Fmt.num(price)}</span>
       </div>`;
     }).join('');
   }
@@ -60,7 +53,7 @@ function createOrderBook(root) {
     const bestBid = bidLevels[0] ? parseFloat(bidLevels[0][0]) : null;
     const bestAsk = askLevels[0] ? parseFloat(askLevels[0][0]) : null;
     if (bestBid !== null && bestAsk !== null) {
-      spreadEl.textContent = `SPREAD  ${fmt(bestAsk - bestBid)}`;
+      spreadEl.textContent = `SPREAD  ${Fmt.num(bestAsk - bestBid)}`;
     }
   }
 

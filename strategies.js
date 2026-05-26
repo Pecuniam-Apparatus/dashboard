@@ -13,13 +13,6 @@ const Strategies = (() => {
     return data.find(s => s.name === PAPER_NAME) || data[0];
   }
 
-  function fmt(n, dec = 2) {
-    return parseFloat(n).toLocaleString('en-US', {
-      minimumFractionDigits: dec,
-      maximumFractionDigits: dec,
-    });
-  }
-
   function statusClass(s) {
     return { running: 'status-running', offline: 'status-offline', error: 'status-error' }[s.toLowerCase()] || '';
   }
@@ -27,7 +20,7 @@ const Strategies = (() => {
   function pnlCell(pnl) {
     if (pnl === null) return '—';
     const cls = pnl >= 0 ? 'up' : 'down';
-    return `<span class="${cls}">${(pnl >= 0 ? '+' : '') + fmt(pnl)}</span>`;
+    return `<span class="${cls}">${(pnl >= 0 ? '+' : '') + Fmt.num(pnl)}</span>`;
   }
 
   function render() {
@@ -55,7 +48,7 @@ const Strategies = (() => {
     if (hb.unrealized_pnl != null) row.pnl = parseFloat(hb.unrealized_pnl);
     if (hb.in_position) {
       const side = (hb.side || '').toUpperCase();
-      row.lastTrade = `${side} @ ${fmt(hb.entry_price)} · ${hb.trade_count} trades`;
+      row.lastTrade = `${side} @ ${Fmt.num(hb.entry_price)} · ${hb.trade_count} trades`;
     } else {
       row.lastTrade = `FLAT · ${hb.trade_count} trades`;
     }
@@ -74,5 +67,5 @@ const Strategies = (() => {
 
   render();
 
-  return { data, render, applyHeartbeat, setOffline };
+  return { applyHeartbeat, setOffline };
 })();
